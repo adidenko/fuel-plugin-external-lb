@@ -14,13 +14,6 @@ network_metadata:
     public:
       ipaddr: <%= @external_lb['public_ip'] %>
       namespace: false
-    vrouter:
-      ipaddr: 10.144.2.1
-      namespace: false
-    vrouter_pub:
-      ipaddr: 10.144.1.1
-      namespace: false
 run_ping_checker: false
-management_vrouter_vip: 10.144.2.5
 "
 }

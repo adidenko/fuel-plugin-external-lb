@@ -2,7 +2,7 @@
   type: puppet
   role: '*'
   stage: pre_deployment
-  requires: [hiera]
+  requires: [pre_hiera_config]
   parameters:
     puppet_manifest: puppet/manifests/create_hiera_config.pp
     puppet_modules: /etc/puppet/modules

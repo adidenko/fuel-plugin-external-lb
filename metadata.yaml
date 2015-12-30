@@ -1,6 +1,6 @@
 name: external_lb
 title: External load-balancer
-version: 0.1.0
+version: 0.1.2
 description: Enable to use external load-balancer
 fuel_version: ['8.0']
 licenses: ['Apache License, Version 2.0']
