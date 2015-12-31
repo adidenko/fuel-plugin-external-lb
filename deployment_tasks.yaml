@@ -1,7 +1,8 @@
 - id: external-lb-hiera
   type: puppet
   role: '*'
-  stage: pre_deployment
+  requires: [pre_hiera_config]
+  required_for: [pre_deployment_end]
   parameters:
     puppet_manifest: puppet/manifests/create_hiera_config.pp
     puppet_modules: /etc/puppet/modules
