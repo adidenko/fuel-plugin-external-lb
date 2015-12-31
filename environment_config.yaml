@@ -1,13 +1,13 @@
 attributes:
-  management_ip:
-    value: "10.10.2.1"
-    label: "management_ip"
-    description: "Management IP of external LB"
-    weight: 25
-    type: "text"
   public_ip:
     value: "10.10.1.1"
     label: "public_ip"
     description: "Public IP of external LB"
+    weight: 15
+    type: "text"
+  management_ip:
+    value: "10.10.2.1"
+    label: "management_ip"
+    description: "Management IP of external LB"
     weight: 25
     type: "text"
