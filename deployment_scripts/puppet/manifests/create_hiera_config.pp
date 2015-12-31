@@ -5,7 +5,7 @@ $external_lb = hiera('external-lb')
 
 file {'/etc/hiera/plugins/fuel-plugin-external-lb.yaml':
   ensure  => file,
-  content => "# Created by puppet, please do not edit manually
+  content => inline_template("# Created by puppet, please do not edit manually
 network_metadata:
   vips:
     management:
@@ -15,5 +15,5 @@ network_metadata:
       ipaddr: <%= @external_lb['public_ip'] %>
       namespace: false
 run_ping_checker: false
-"
+")
 }
