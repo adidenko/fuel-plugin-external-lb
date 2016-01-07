@@ -1,9 +1,10 @@
 # Manifest that creates hiera config overrride
 notice('MODULAR: create_hiera_config.pp')
+$plugin_name = 'external_loadbalancer'
 
-$external_lb = hiera('external_loadbalancer')
+$external_lb = hiera("$plugin_name")
 
-file {'/etc/hiera/plugins/external_lb.yaml':
+file {"/etc/hiera/plugins/${plugin_name}.yaml":
   ensure  => file,
   content => inline_template("# Created by puppet, please do not edit manually
 network_metadata:
