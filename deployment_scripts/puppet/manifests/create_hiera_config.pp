@@ -1,7 +1,7 @@
 # Manifest that creates hiera config overrride
 notice('MODULAR: create_hiera_config.pp')
 
-$external_lb = hiera('external_lb')
+$external_lb = hiera('external_loadbalancer')
 
 file {'/etc/hiera/plugins/external_lb.yaml':
   ensure  => file,

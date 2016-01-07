@@ -1,4 +1,4 @@
-name: external_lb
+name: external_loadbalancer
 title: External load-balancer
 version: 0.1.3
 description: Enable to use external load-balancer
