@@ -1,8 +1,8 @@
 - id: external-lb-hiera
   type: puppet
-  role: '*'
-  requires: [pre_hiera_config]
-  required_for: [pre_deployment_end]
+  groups: [primary-controller, controller, compute, compute-vmware, cinder, cinder-vmware, primary-mongo, mongo, ceph-osd, virt]
+  requires: [deploy_start]
+  required_for: [hiera]
   parameters:
     puppet_manifest: puppet/manifests/create_hiera_config.pp
     puppet_modules: /etc/puppet/modules
