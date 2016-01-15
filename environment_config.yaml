@@ -1,13 +1,52 @@
 attributes:
   public_ip:
     value: "10.10.1.1"
-    label: "public_ip"
+    label: "Public IP"
     description: "Public IP of external LB"
     weight: 15
     type: "text"
+    regex:
+      source: '^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
+      error: "Invalid IP"
   management_ip:
     value: "10.10.2.1"
-    label: "management_ip"
+    label: "Management IP"
     description: "Management IP of external LB"
     weight: 25
     type: "text"
+    regex:
+      source: '^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
+      error: "Invalid IP"
+  enable_fake_floating:
+    type: "checkbox"
+    weight: 30
+    value: false
+    label: "Enable fake floating IPs"
+    description: "Floating IPs won't work if you move controllers into different network node groups (racks). So your VMs will have access only to fixed network, they won't be able to access Internet or any other external networks. If you enable this fake floating IPs feature, then you still won't be able to access VMs via floating IPs (impossible by design), but your VMs will be able to access Internet and other external networks."
+  fake_floating_cidr:
+    value: "10.10.10.0/24"
+    label: "Floating CIDR"
+    description: "Fake floating IP CIDR, should not match with existing networks"
+    weight: 40
+    type: "text"
+    regex:
+      source: '^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\/([1-9]|[1-2]\d|3[0-2])$'
+      error: "Invalid CIDR"
+  fake_floating_range:
+    value: "10.10.10.2:10.10.10.254"
+    label: "Floating IP range"
+    description: "Fake floating IP range, will be used for tenant routers"
+    weight: 50
+    type: "text"
+    regex:
+      source: '^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\:(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
+      error: "Invalid IP range"
+  fake_floating_gw:
+    value: "10.10.10.1"
+    label: "Floating gateway"
+    description: "Fake floating gateway"
+    weight: 60
+    type: "text"
+    regex:
+      source: '^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
+      error: "Invalid IP"
