@@ -23,7 +23,7 @@ network_metadata:
       namespace: false
 run_ping_checker: false
 <% end -%>
-<% if @external_lb['enable_fake_floating'] -%>
+<% if @external_lb['external_public_vip'] and @external_lb['enable_fake_floating'] -%>
 quantum_settings:
   predefined_networks:
     admin_floating_net:
