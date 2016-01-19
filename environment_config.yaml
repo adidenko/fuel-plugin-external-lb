@@ -1,4 +1,10 @@
 attributes:
+  external_public_vip:
+    type: "checkbox"
+    weight: 10
+    value: true
+    label: "Use external LB for public VIP"
+    description: "Whether we should we use external LB for public VIP."
   public_ip:
     value: "10.10.1.1"
     label: "Public IP"
@@ -8,6 +14,12 @@ attributes:
     regex:
       source: '^(?:(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}(?:[0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])$'
       error: "Invalid IP"
+  external_management_vip:
+    type: "checkbox"
+    weight: 20
+    value: true
+    label: "Use external LB for management VIP"
+    description: "Whether we should we use external LB for management VIP."
   management_ip:
     value: "10.10.2.1"
     label: "Management IP"

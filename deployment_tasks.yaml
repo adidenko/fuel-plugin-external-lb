@@ -5,5 +5,14 @@
   required_for: [hiera]
   parameters:
     puppet_manifest: puppet/manifests/create_hiera_config.pp
-    puppet_modules: /etc/puppet/modules
+    puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 360
+- id: external-lb-ovs-to-ns-port
+  type: puppet
+  groups: [primary-controller, controller]
+  requires: [deploy_start, netconfig, cluster-vrouter]
+  required_for: [deploy_end]
+  parameters:
+    puppet_manifest: puppet/manifests/create_hiera_config.pp
+    puppet_modules: puppet/modules:/etc/puppet/modules
+    timeout: 600

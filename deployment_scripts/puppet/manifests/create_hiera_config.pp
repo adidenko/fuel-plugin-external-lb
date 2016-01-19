@@ -12,13 +12,17 @@ file {"/etc/hiera/plugins/${plugin_name}.yaml":
   content => inline_template("# Created by puppet, please do not edit manually
 network_metadata:
   vips:
+<% if @external_lb['external_management_vip'] -%>
     management:
       ipaddr: <%= @external_lb['management_ip'] %>
       namespace: false
+<% end -%>
+<% if @external_lb['external_public_vip'] -%>
     public:
       ipaddr: <%= @external_lb['public_ip'] %>
       namespace: false
 run_ping_checker: false
+<% end -%>
 <% if @external_lb['enable_fake_floating'] -%>
 quantum_settings:
   predefined_networks:
@@ -28,14 +32,6 @@ quantum_settings:
         floating:
         - <%= @external_lb['fake_floating_range'] %>
         gateway: <%= @external_lb['fake_floating_gw'] %>
-network_scheme:
-  transformations:
-  - action: add-port
-    name: <%= @floating_gw_if %>
-    bridge: <%= @floating_br %>
-    provider: ovs
 <% end -%>
 ")
-# ip link set exlb-float-gw netns vrouter
-# ip netns exec vrouter ip a add 10.10.10.1/24 dev exlb-float-gw
 }
