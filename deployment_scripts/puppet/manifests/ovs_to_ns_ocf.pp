@@ -5,7 +5,6 @@ $external_lb    = hiera("$plugin_name")
 $network_scheme = hiera_hash("network_scheme", {})
 $floating_br    = pick($network_scheme['roles']['neutron/floating'], 'br-floating')
 $floating_gw_if = pick($external_lb['floating_gw_if'], 'exlb-float-gw')
-$cidr_arr       = split($external_lb['fake_floating_cidr'], '/')
 
 if $external_lb['external_public_vip'] and $external_lb['enable_fake_floating'] {
   $service_name = 'p_exlb_floating_port'
@@ -23,7 +22,7 @@ if $external_lb['external_public_vip'] and $external_lb['enable_fake_floating'] 
     'ovs_interface'       => $floating_br,
     'namespace_interface' => $floating_gw_if,
     'namespace_ip'        => $external_lb['fake_floating_gw'],
-    'namespace_mask'      => $cidr_arr[1],
+    'namespace_cidr'      => $external_lb['fake_floating_cidr'],
   }
   $operations = {
     'monitor' => {

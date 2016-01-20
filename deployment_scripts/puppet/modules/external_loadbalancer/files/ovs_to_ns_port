@@ -16,12 +16,12 @@
 # OCF parameters:
 # OCF_RESKEY_ns
 # OCF_RESKEY_other_networks
-#
 # OCF_RESKEY_ovs_interface
 # OCF_RESKEY_namespace_interface
 # OCF_RESKEY_namespace_ip
-# OCF_RESKEY_namespace_mask
+# OCF_RESKEY_namespace_cidr
 # OCF_RESKEY_route_metric
+# OCF_RESKEY_namespace_out_interface
 #
 ##########################################################################
 # Initialization:
@@ -33,7 +33,8 @@ OCF_RESKEY_other_networks_default=false
 OCF_RESKEY_ovs_interface_default="br-floating"
 OCF_RESKEY_namespace_interface_default="floating-gw"
 OCF_RESKEY_namespace_ip_default="10.10.10.1"
-OCF_RESKEY_namespace_mask_default="24"
+OCF_RESKEY_namespace_cidr_default="10.10.10.0/24"
+OCF_RESKEY_namespace_out_interface_default="vr-host-ns"
 
 : ${OCF_ROOT=${OCF_ROOT_default}}
 : ${HA_LOGTAG="ocf-ovs_to_ns_port"}
@@ -45,7 +46,7 @@ OCF_RESKEY_namespace_mask_default="24"
 : ${OCF_RESKEY_namespace_interface=${OCF_RESKEY_namespace_interface_default}}
 : ${OCF_RESKEY_host_ip=${OCF_RESKEY_host_ip_default}}
 : ${OCF_RESKEY_namespace_ip=${OCF_RESKEY_namespace_ip_default}}
-: ${OCF_RESKEY_namespace_mask=${OCF_RESKEY_namespace_mask_default}}
+: ${OCF_RESKEY_namespace_cidr=${OCF_RESKEY_namespace_cidr_default}}
 
 : ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/resource.d/heartbeat}
 . ${OCF_FUNCTIONS_DIR}/.ocf-shellfuncs
@@ -115,9 +116,18 @@ For example, "vr-ns"
 <content type="string" default="${OCF_RESKEY_namespace_interface_default}" />
 </parameter>
 
+<parameter name="namespace_out_interface">
+<longdesc lang="en">
+The name of outgoing interface used for default routing in namespace.
+For example, "vr-host-ns"
+</longdesc>
+<shortdesc lang="en">The name of the namespace outgoing interface</shortdesc>
+<content type="string" default="${OCF_RESKEY_namespace_out_interface_default}" />
+</parameter>
+
 <parameter name="namespace_ip">
 <longdesc lang="en">
-The IP address used by the namespace interface, uses namespace_mask to determine subnet.
+The IP address used by the namespace interface, uses namespace_cidr to determine subnet.
 Should not collide with any IP addresses already used in your network.
 For example, "10.10.10.1"
 </longdesc>
@@ -125,13 +135,13 @@ For example, "10.10.10.1"
 <content type="string" default="${OCF_RESKEY_namespace_ip_default}" />
 </parameter>
 
-<parameter name="namespace_mask">
+<parameter name="namespace_cidr">
 <longdesc lang="en">
 The network mask length used to determine subnet of the IP in namespace.
 For example, "24"
 </longdesc>
 <shortdesc lang="en">Network mask length</shortdesc>
-<content type="string" default="${OCF_RESKEY_namespace_mask_default}" />
+<content type="string" default="${OCF_RESKEY_namespace_cidr_default}" />
 </parameter>
 
 </parameters>
@@ -161,14 +171,18 @@ ovs_ns_patch_status()
 {
   check_ns || return $OCF_ERR_GENERIC
 
-  ocf_log debug "Step 1"
   ovs-vsctl list-ports $OCF_RESKEY_ovs_interface | grep $OCF_RESKEY_namespace_interface || return $OCF_NOT_RUNNING
 
-  ocf_log debug "Step 2"
   $RUN_IN_NS ip -4 a ls $OCF_RESKEY_namespace_interface | grep $OCF_RESKEY_namespace_ip
   rc=$?
   if [ $rc -ge 1 ]; then
     ocf_log debug "Failed to find $OCF_RESKEY_namespace_ip on $OCF_RESKEY_namespace_interface: $rc"
+    return $OCF_NOT_RUNNING
+  fi
+
+  $RUN_IN_NS iptables -t nat -L -n -v | grep MASQUERADE | grep $OCF_RESKEY_namespace_cidr
+  if [ $rc -ge 1 ]; then
+    ocf_log debug "Failed to find MASQUERADE iptables rule for $OCF_RESKEY_namespace_cidr CIDR: $rc"
     return $OCF_NOT_RUNNING
   fi
 
@@ -194,7 +208,17 @@ ovs_ns_patch_setup()
   fi
 
   ocf_log debug "Configuring interface in namespace"
-  ocf_run $RUN_IN_NS ifconfig $OCF_RESKEY_namespace_interface $OCF_RESKEY_namespace_ip/$OCF_RESKEY_namespace_mask
+  net_mask=${OCF_RESKEY_namespace_cidr#*/}
+  ocf_run $RUN_IN_NS ifconfig $OCF_RESKEY_namespace_interface $OCF_RESKEY_namespace_ip/$net_mask
+  if [ $? -ge 1 ]; then
+    return $OCF_ERR_GENERIC
+  fi
+
+  ocf_log debug "Configuring masquerade"
+  while `$RUN_IN_NS iptables -t nat -D POSTROUTING -s $OCF_RESKEY_namespace_cidr -o $OCF_RESKEY_namespace_out_interface -j MASQUERADE`; do
+    ocf_log debug "Removed old rule"
+  done
+  ocf_run $RUN_IN_NS iptables -t nat -I POSTROUTING -s $OCF_RESKEY_namespace_cidr -o $OCF_RESKEY_namespace_out_interface -j MASQUERADE
   if [ $? -ge 1 ]; then
     return $OCF_ERR_GENERIC
   fi

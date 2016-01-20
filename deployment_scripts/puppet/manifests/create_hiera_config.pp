@@ -16,10 +16,14 @@ network_metadata:
     management:
       ipaddr: <%= @external_lb['management_ip'] %>
       namespace: false
+    vrouter:
+      namespace: false
 <% end -%>
 <% if @external_lb['external_public_vip'] -%>
     public:
       ipaddr: <%= @external_lb['public_ip'] %>
+      namespace: false
+    vrouter_pub:
       namespace: false
 run_ping_checker: false
 <% end -%>
