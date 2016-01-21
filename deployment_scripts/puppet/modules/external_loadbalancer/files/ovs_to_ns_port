@@ -47,6 +47,7 @@ OCF_RESKEY_namespace_out_interface_default="vr-host-ns"
 : ${OCF_RESKEY_host_ip=${OCF_RESKEY_host_ip_default}}
 : ${OCF_RESKEY_namespace_ip=${OCF_RESKEY_namespace_ip_default}}
 : ${OCF_RESKEY_namespace_cidr=${OCF_RESKEY_namespace_cidr_default}}
+: ${OCF_RESKEY_namespace_out_interface=${OCF_RESKEY_namespace_out_interface_default}}
 
 : ${OCF_FUNCTIONS_DIR=${OCF_ROOT}/resource.d/heartbeat}
 . ${OCF_FUNCTIONS_DIR}/.ocf-shellfuncs
@@ -171,8 +172,11 @@ ovs_ns_patch_status()
 {
   check_ns || return $OCF_ERR_GENERIC
 
+  ocf_log debug "Check if $OCF_RESKEY_namespace_interface is added to OVS $OCF_RESKEY_ovs_interface"
   ovs-vsctl list-ports $OCF_RESKEY_ovs_interface | grep $OCF_RESKEY_namespace_interface || return $OCF_NOT_RUNNING
+  sleep 1
 
+  ocf_log debug "Check if $OCF_RESKEY_namespace_ip is assigned to $OCF_RESKEY_namespace_interface"
   $RUN_IN_NS ip -4 a ls $OCF_RESKEY_namespace_interface | grep $OCF_RESKEY_namespace_ip
   rc=$?
   if [ $rc -ge 1 ]; then
@@ -180,7 +184,9 @@ ovs_ns_patch_status()
     return $OCF_NOT_RUNNING
   fi
 
+  ocf_log debug "Check if MASQUERADE rule present for $OCF_RESKEY_namespace_cidr network"
   $RUN_IN_NS iptables -t nat -L -n -v | grep MASQUERADE | grep $OCF_RESKEY_namespace_cidr
+  rc=$?
   if [ $rc -ge 1 ]; then
     ocf_log debug "Failed to find MASQUERADE iptables rule for $OCF_RESKEY_namespace_cidr CIDR: $rc"
     return $OCF_NOT_RUNNING
@@ -194,12 +200,14 @@ ovs_ns_patch_setup()
   ovs_ns_patch_status && return $OCF_SUCCESS
   ocf_log debug "Deleting port from ovs"
   ocf_run ovs-vsctl del-port $OCF_RESKEY_namespace_interface
+  sleep 1
 
   ocf_log debug "Adding port to ovs interface"
   ocf_run ovs-vsctl add-port $OCF_RESKEY_ovs_interface $OCF_RESKEY_namespace_interface -- set interface $OCF_RESKEY_namespace_interface type=internal
   if [ $? -ge 1 ]; then
     return $OCF_ERR_GENERIC
   fi
+  sleep 1
 
   ocf_log debug "Running: ip link set $OCF_RESKEY_namespace_interface netns $OCF_RESKEY_ns"
   ocf_run ip link set $OCF_RESKEY_namespace_interface netns $OCF_RESKEY_ns
@@ -214,10 +222,13 @@ ovs_ns_patch_setup()
     return $OCF_ERR_GENERIC
   fi
 
-  ocf_log debug "Configuring masquerade"
+  ocf_log debug "Cleaning up masquerade rules"
+  ocf_log debug "$RUN_IN_NS iptables -t nat -D POSTROUTING -s $OCF_RESKEY_namespace_cidr -o $OCF_RESKEY_namespace_out_interface -j MASQUERADE"
   while `$RUN_IN_NS iptables -t nat -D POSTROUTING -s $OCF_RESKEY_namespace_cidr -o $OCF_RESKEY_namespace_out_interface -j MASQUERADE`; do
     ocf_log debug "Removed old rule"
   done
+
+  ocf_log debug "Configuring masquerade"
   ocf_run $RUN_IN_NS iptables -t nat -I POSTROUTING -s $OCF_RESKEY_namespace_cidr -o $OCF_RESKEY_namespace_out_interface -j MASQUERADE
   if [ $? -ge 1 ]; then
     return $OCF_ERR_GENERIC
@@ -232,7 +243,17 @@ ovs_ns_patch_start()
 
 ovs_ns_patch_stop()
 {
-  ocf_log debug "OVS to NS port was stopped, all resources will remain"
+  ovs_ns_patch_status || return $OCF_ERR_GENERIC
+
+  ocf_log debug "Deleting port from ovs"
+  ocf_run ovs-vsctl del-port $OCF_RESKEY_namespace_interface
+  sleep 1
+  ocf_log debug "Cleaning up masquerade rules"
+  ocf_log debug "$RUN_IN_NS iptables -t nat -D POSTROUTING -s $OCF_RESKEY_namespace_cidr -o $OCF_RESKEY_namespace_out_interface -j MASQUERADE"
+  while `$RUN_IN_NS iptables -t nat -D POSTROUTING -s $OCF_RESKEY_namespace_cidr -o $OCF_RESKEY_namespace_out_interface -j MASQUERADE`; do
+    ocf_log debug "Removed old rule"
+  done
+
   return $OCF_SUCCESS
 }
 
