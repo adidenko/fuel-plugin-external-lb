@@ -1,0 +1,12 @@
+controller-exlb:
+  name: "Controller with external LB support"
+  description: "This is the replacement for default controller node, supports external Load-balancer"
+  has_primary: true
+  public_ip_required: true
+  conflicts:
+    - controller
+  update_required:
+    - controller-exlb
+  restrictions:
+    - condition: "settings:external_loadbalancer.metadata.enabled != true"
+      message: "External LB plugin should be enabled"
