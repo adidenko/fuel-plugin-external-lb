@@ -10,3 +10,8 @@ controller-exlb:
   restrictions:
     - condition: "settings:external_loadbalancer.metadata.enabled != true"
       message: "External LB plugin should be enabled"
+#controller:
+#  name: "Controller"
+#  description: "Controller"
+#  limits:
+#    min: 0
