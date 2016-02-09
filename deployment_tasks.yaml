@@ -21,20 +21,23 @@
 # This is a workaround to disable adding record to hosts file if we use FQDN external host
 - id: disable-public-ssl-hash
   type: puppet
+  groups: [primary-controller, controller]
   requires: [ssl-add-trust-chain]
-  condition: "settings:public_ssl.horizon.value == true or settings:public_ssl.services.value == true"
   required_for: [ssl-dns-setup]
+  condition: "settings:public_ssl.horizon.value == true or settings:public_ssl.services.value == true"
   parameters:
     puppet_manifest: puppet/manifests/disable_public_ssl_hash.pp
-    puppet_modules: /etc/puppet/modules
+    puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 60
+
 - id: enable-public-ssl-hash
   type: puppet
+  groups: [primary-controller, controller]
   requires: [ssl-dns-setup]
-  condition: "settings:public_ssl.horizon.value == true or settings:public_ssl.services.value == true"
   required_for: [hosts]
+  condition: "settings:public_ssl.horizon.value == true or settings:public_ssl.services.value == true"
   parameters:
     puppet_manifest: puppet/manifests/enable_public_ssl_hash.pp
-    puppet_modules: /etc/puppet/modules
+    puppet_modules: puppet/modules:/etc/puppet/modules
     timeout: 60
 
