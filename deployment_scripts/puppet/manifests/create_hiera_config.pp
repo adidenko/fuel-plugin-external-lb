@@ -6,6 +6,7 @@ $external_lb    = hiera("$plugin_name")
 $network_scheme = hiera_hash("network_scheme", {})
 $floating_br    = pick($network_scheme['roles']['neutron/floating'], 'br-floating')
 $floating_gw_if = pick($external_lb['floating_gw_if'], 'exlb-float-gw')
+$master_ip      = hiera('master_ip')
 
 file {"/etc/hiera/plugins/${plugin_name}.yaml":
   ensure  => file,
@@ -19,7 +20,7 @@ network_metadata:
 <% if @external_lb['skip_vrouter_vip'] -%>
     vrouter:
       namespace: false
-      ipaddr: 1.2.3.4
+      ipaddr: <%= @master_ip %>
 <% end -%>
 <% end -%>
 <% if @external_lb['external_public_vip'] -%>
