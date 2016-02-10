@@ -7,9 +7,9 @@ It can also allow cloud operators to move controllers into different racks (see 
 
 ## Compatibility
 
-Plugin version | Fuel version
--------------- | ------------
-1.x.x | Fuel-8.x
+| Plugin version | Fuel version |
+| -------------- | ------------ |
+| 1.x.x          | Fuel-8.x     |
 
 ## Requirements
 External load balancer configuration is out of scope of this plugin. We assume that you configure load balancer by other means (manually or by some other Fuel plugin).
