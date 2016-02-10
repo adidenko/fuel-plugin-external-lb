@@ -1,6 +1,6 @@
 # fuel-plugin-external-lb
 
-## Purpsoe
+## Purpose
 The main purpose of this plugin is to provide ability to use external load balancer instead of Haproxy which is deployed on controllers.
 
 It can also allow cloud operators to move controllers into different racks (see more details below).
