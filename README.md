@@ -1,4 +1,22 @@
-# fuel-plugin-external-lb
+Table of Contents
+=================
+
+  * [Purpose](#purpose)
+  * [Compatibility](#compatibility)
+  * [Requirements](#requirements)
+  * [Known limitations](#known-limitations)
+  * [Configuration](#configuration)
+  * [How it works](#how-it-works)
+    * [Changes in deployment](#changes-in-deployment)
+      * [Default deployment procedure](#default-deployment-procedure)
+      * [Deployment with External LB](#deployment-with-external-lb)
+    * [Changes in haproxy_backend_status puppet resource](#changes-in-haproxy_backend_status-puppet-resource)
+      * [Default deployment procedure](#default-deployment-procedure-1)
+      * [Deployment with External LB](#deployment-with-external-lb-1)
+  * [How to move controllers to different racks?](#how-to-move-controllers-to-different-racks)
+    * [IP traffic flow chart](#ip-traffic-flow-chart)
+      * [Default IP flow](#default-ip-flow)
+      * [New IP flow with "fake floating network"](#new-ip-flow-with-fake-floating-network)
 
 ## Purpose
 The main purpose of this plugin is to provide ability to use external load balancer instead of Haproxy which is deployed on controllers.
@@ -26,6 +44,20 @@ fuel deployment --env 1 --default
 After this you can open any yaml in `./deployment_1/` directory and check controller management and public IPs in `network_metadata/nodes` hash.
 
 If you want to Public TLS then please note that Fuel generates self-signed SSL certificate during deployment, so you can't download it before deployment starts and configure it on external load balancer. The best solution is to create your own certificate (self signed or issued) and upload it via Environment -> Settings -> Security.
+
+**Important!** It's required to configure mysql-status frontend on external load-balancer (we do not configure such frontend on controllers using Haproxy because we use mysql frontend for that). This frontend should balance 49000 port across all controllers with HTTP chk option. Here's an example of frontend config for Haproxy:
+
+```
+listen mysqld-status
+  bind 1.1.1.1:49000
+  http-request  set-header X-Forwarded-Proto https if { ssl_fc }
+  option  httpchk
+  option  httplog
+  option  httpclose
+  server node-1 10.144.2.11:49000 check inter 20s fastinter 2s downinter 2s rise 3 fall 3
+  server node-3 10.146.2.11:49000 check inter 20s fastinter 2s downinter 2s rise 3 fall 3
+  server node-2 10.145.2.12:49000 check inter 20s fastinter 2s downinter 2s rise 3 fall 3
+```
 
 ## Known limitations
 * OSTF is not working
