@@ -19,13 +19,18 @@ fuel deployment --env 1 --default
 ```
 After this you can open any yaml in `./deployment_1/` directory and check controller management and public IPs in `network_metadata/nodes` hash.
 
-If you want to Public TLS then please note that Fuel generates self-signed SSL certificate during deployment, so you can't download it before deployment starts and configure it on external load balancer. The best solution is to create your own certificate (self signed or issued) and upload it via Fuel -> Settings -> Security.
+If you want to Public TLS then please note that Fuel generates self-signed SSL certificate during deployment, so you can't download it before deployment starts and configure it on external load balancer. The best solution is to create your own certificate (self signed or issued) and upload it via Environment -> Settings -> Security.
 
 ## Known limitations
 * OSTF is not working
 * Floating IPs are not working if controllers are in different racks
 
 ## Configuration
+Plugin settings are available on Environment -> Settings -> Other page. Some important notes:
+* If external LB is not enabled for one of VIPs (public or management), then Fuel will configure such IP under corosync cluster and setup Haproxy on controllers
+* It's possible to specify both FQDN and IP address as external LB host
+* It's possible to specify the same external LB host for both public and management VIPs
+* If controllers are being deployed in the same rack (network node group), then it's not required to enable "Fake floating IPs"
 
 ## How it works
 General workflow
@@ -68,9 +73,14 @@ Providing HA/failover for IPs is the problem here. In case of static routing itâ
 ### IP traffic flow chart
 
 #### Default IP flow
+This is how ourgoing IP traffic flow look like on controllers
 ![Default IP flow scheme](doc/default-traffic.png)
 ![Legend](doc/legend.png)
 
+If controllers are moved to different racks, then everything starting from `br-ex` will be different for every controller - every controller has different public network and IP on `br-ex`. So instances won't be able to access outer networks when public network of controllers that's running neutron-l3-agent does not match with configured floating network.
+
 #### New IP flow with "fake floating network"
+In order to solve the issue listed above, plugin configures floating IP gateway in `vrouter` namespace which already exists on every controller. Such configuration will be excatly the same on any controller so it will not matter which controller is running neutron-l3-agent.
+
 ![New IP flow scheme](doc/new-traffic.png)
 ![Legend](doc/legend.png)
