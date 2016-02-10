@@ -27,6 +27,37 @@ If you want to Public TLS then please note that Fuel generates self-signed SSL c
 
 ## Configuration
 
+## How it works
+General workflow
+* It disables VIP auto allocation in Nailgun which allows us to move controllers into different racks
+* It disables VIP deployment and HAproxy configuration on controllers, if operator choses external LB for both public and management VIPs
+* It configures “fake floating network” in order to provide access to external networks for OpenStack instances, if operator enables this feature
+
+### Changes in deployment
+#### Default deployment procedure
+* Run VIPs on controllers
+* Setup HAproxy on each controller to balance frontends across all the controllers
+* Use `haproxy_backend_status` puppet resource as “synchronization point” in our manifests when we need to wait for some HA frontend to come up (like keystone API)
+
+#### Deployment with External LB
+* ~~Run VIPs on controllers~~
+* ~~Setup HAproxy on each controller to balance frontends across all the controllers~~
+* Use `haproxy_backend_status` puppet resource as “synchronization point” in our manifests when we need to wait for some HA frontend to come up (like keystone API)
+
+### Changes in haproxy_backend_status puppet resource
+
+#### Default deployment procedure
+`haproxy_backend_status` puppet resource connects to HAproxy status URL, gets the list of all frontends/backends, finds the needed one and checks if it’s UP or DOWN (`haproxy` provider). Example for keystone-api:
+
+* Connect to http://$LOAD_BALANCER_IP:10000/;csv   ($LOAD_BALANCER_IP = VIP)
+* Get list of frontends and check if 'kestone-1' backend is UP
+
+#### Deployment with External LB
+`haproxy_backend_status` puppet resource connects to frontend URL directly and checks response HTTP code (`http` provider). Example for keystone-api:
+
+* Connect to http://$LOAD_BALANCER_IP:5000/v3      ($LOAD_BALANCER_IP = External LB)
+* Get HTTP responce code and check if it's UP
+
 ## How to move controllers to different racks?
 In our deployment we use HA resources that are being deployed on controller nodes. Those are mostly services and VIPs.
 
